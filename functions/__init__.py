@@ -12,3 +12,6 @@ from .get_date import date_and_time
 from .get_species import get_data_info
 from .day_data_array import all_data_to_ang
 from .plots_on_globe import plot_on_globe
+from .scans_at_time import scans_at_time
+from .get_difference import absolute_difference
+from .segment_image import segment_image

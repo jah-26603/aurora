@@ -7,13 +7,16 @@ Created on Mon Aug 26 20:37:58 2024
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy
+import numpy as np
+from matplotlib.path import Path
 
-def plot_on_globe(latitude, longitude, brightnesses, date, time_array, filled_indices, species, hemisphere_order, skip_south_plot  = False, vmax = 6000 ):
+def plot_on_globe(latitude, longitude, brightnesses, date, time_array, filled_indices, species, hemisphere_order, skip_south_plot  = False, vmax = [1000, 1000, 3, 3], units = ['Rayleighs (R)', 'Rayleighs (R)', 'Classes', 'Classes']):
     if hemisphere_order[-1] and skip_south_plot == 1:
         pass
     else:
         
-        plt.figure()
+
+        # Update the default Matplotlib parameters
         plt.rcParams.update({
             "font.size": 10,
             "lines.color": "black",
@@ -28,56 +31,57 @@ def plot_on_globe(latitude, longitude, brightnesses, date, time_array, filled_in
             "figure.facecolor": "white",
             "figure.edgecolor": "white",
             "savefig.facecolor": "white",
-            "savefig.edgecolor": "white"})
-        plt.rcParams['axes.labelpad']=15
-    
-        #'''Setup the size of the figure'''
-        fig= plt.figure(figsize=(7,6))
-    
-        #'''Title'''
-        fig.suptitle(f'{species} Radiance Colormaps \nDate: '+date+'\nTime: '+ time_array[filled_indices[0,0],filled_indices[0,1]],color='black', y=1, weight='bold')
-    
-        #'''Setup the projection of your plot, I use 'geostationary' as a example, you can also try NearsidePerspective if you want to focus on other latitue '''
-        Nearside_ax=ccrs.NearsidePerspective(central_latitude=0,central_longitude=-47.5,satellite_height=35786000)
-    
-        #'''Simply using pcolor with a proper projection, you can make the plot with data on the globe.'transform=ccrs.PlateCarree()' place the data on accordingly in a geographic longitude vs. latitude coordinate'''
-        ax=plt.subplot(projection=Nearside_ax)  #geostationary_ax)
-        im=ax.pcolor(longitude, latitude, brightnesses, transform=ccrs.PlateCarree(),cmap='plasma', vmin=0, vmax = vmax)
-    
-    
-        #'''Creat a color bar'''
-        cb=plt.colorbar(im, pad = 0.1)
-        cb.set_label(f'{species} Radiance (Rayleighs)')
-    
-        ax.set_global()
-        gl = ax.gridlines(color='lightgrey', draw_labels=True)
-        gl.xlabel_style = {'size': 10, 'color': 'black'}
-        gl.ylabel_style = {'size': 10, 'color': 'black', 'weight': 'bold'}
-    
-        plt.legend()
+            "savefig.edgecolor": "white"
+        })
+        plt.rcParams['axes.labelpad'] = 15
+        
+        # Setup the figure size and title
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12), subplot_kw={'projection': ccrs.NearsidePerspective(central_latitude=0, central_longitude=-47.5, satellite_height=35786000)})
+        fig.suptitle(f'Radiance Colormaps \nDate: {date}\nTime: {time_array[filled_indices[0,0], filled_indices[0,1]]}', color='black', y=1.05, weight='bold')
+        plt.subplots_adjust(wspace=0.4, hspace= 1)
+        # Loop through the 2x2 axes grid
+        for i, ax in enumerate(axes.flat):
+            im = ax.pcolor(longitude, latitude, brightnesses[i], transform=ccrs.PlateCarree(), cmap='plasma', vmin=0, vmax=vmax[i])
+            ax.set_title(species[i], weight = 'bold', fontsize = 12)
+            # Create color bar for each subplot
+            cb = fig.colorbar(im, ax=ax, orientation='vertical', pad=0.1)
+            cb.set_label(f'{units[i]}')
+        
+
+            # Customize gridlines and global view
+            gl = ax.gridlines(color='lightgrey', draw_labels=True)
+            gl.xlabel_style = {'size': 10, 'color': 'black'}
+            gl.ylabel_style = {'size': 10, 'color': 'black', 'weight': 'bold'}
+
+        plt.tight_layout()
         plt.show()
         
         
-        fig= plt.figure(figsize=(7,4))
-        #fig.suptitle('Date: '+date+'\nTime: '+ time_array[filled_indices[0,0],filled_indices[0,1]],color='black', y=1)
-    
-        ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=longitude[45, 51]))
-        ax.set_extent([-115, 15, 30, 80])
-    
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                      linewidth=2, color='gray', alpha=0.5, linestyle='--')
-    
-        im=ax.pcolor(longitude, latitude, brightnesses, transform=ccrs.PlateCarree(),cmap='plasma', vmin=0, vmax=vmax) 
-    
-    
-        #'''Creat a color bar'''
-        cb=plt.colorbar(im, pad = 0.1)
-        cb.set_label(f'{species} Radiance (Rayleighs)')
-    
-        #ax.set_global()
-        #gl = ax.gridlines(color='lightgrey', draw_labels=True)
-        gl.xlabel_style = {'size': 10, 'color': 'black'}
-        gl.ylabel_style = {'size': 10, 'color': 'black'}
-    
-        plt.legend()
+
+        # Setup figure with multiple subplots (2x2 grid)
+        fig, axes = plt.subplots(2, 2, figsize=(15, 8), subplot_kw={'projection': ccrs.PlateCarree(central_longitude=longitude[0, 51])})
+        fig.suptitle(f'Radiance Colormaps Zoomed \nDate: {date}\nTime: {time_array[filled_indices[0,0], filled_indices[0,1]]}', color='black', y=1.05, weight='bold')
+        plt.subplots_adjust(wspace=0.4, hspace= 1)
+
+        # Loop through the 2x2 axes grid
+        for i, ax in enumerate(axes.flat):
+            ax.set_extent([-115, 15, 30, 80])
+            ax.set_title(species[i], weight = 'bold', fontsize = 12)
+            # Create gridlines for each subplot
+            gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                              linewidth=2, color='gray', alpha=0.5, linestyle='--')
+        
+            # Plot the data for each subplot
+            im = ax.pcolor(longitude, latitude, brightnesses[i], transform=ccrs.PlateCarree(), cmap='plasma', vmin=0, vmax=vmax[i])
+        
+            # Create color bar for each subplot
+            cb = fig.colorbar(im, ax=ax, orientation='vertical', pad=0.1)
+            cb.set_label(f'{units[i]} ')
+        
+            # Customize the gridline label styles
+            gl.xlabel_style = {'size': 10, 'color': 'black'}
+            gl.ylabel_style = {'size': 10, 'color': 'black'}
+        
+        # Adjust layout and show the plot
+        plt.tight_layout()
         plt.show()

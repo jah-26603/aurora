@@ -83,7 +83,6 @@ for file in range(len(file_list)):
     brightnesses_LBHS, brightnesses_LBHS_unc = functions.get_data_info(radiance, radiance_unc, one_pixel, 138, 152, 148, 150, multi_regions= True)    
     brightnesses_O, brightnesses_O_unc = functions.get_data_info(radiance, radiance_unc, one_pixel, 135, 136, np.nan, np.nan)
 
-
     all_Ob, all_brightnesses, all_sza, all_emission_angle, all_longitude, all_latitude, all_time, all_LBH, all_O, access, n_all_LBH, n_all_O, access_n, n_indices_LBH, lat_vals, long_vals = functions.all_data_to_ang(
             file, hemisphere_order, sza, brightnesses_LBHS, emission_angle, brightnesses_O,
             all_LBH, all_O, access, n_all_LBH, n_all_O, access_n, n_indices_LBH, all_Ob,
