@@ -39,7 +39,9 @@ Data will be used to validate the accuracy of the
 models.
 
 METHODOLOGY
-There are currently two different data processing approaches to isolating the northern aurora. Both processes utilize basic physical phenomenon to constrain multiple different conditions (vauge I know). The current implementation being developed relies on basic computer vision and unsupervised learning techniques. An example of a run through the algorithm shows complete detection of the aurora on the dayside of the globe (even we can't see it). 
+There are currently two different data processing approaches to isolating the northern aurora. Both processes utilize basic physical phenomenon to constrain multiple different conditions (vauge I know). The current implementation being developed relies on basic computer vision and unsupervised learning techniques. An example of a run through the algorithm shows complete detection of the aurora on the dayside of the globe (even we can't see it). However, the current implementation only seems to work for equinox. This is still progress towards the correct direction, as there was previously no implementation that was able to isolate the aurora at any point during the day.
+
+The algorithm utilizes very basic k-means clustering to essentially group pixels that are at similar intensities with one another. A new clustering method, agglomerative clustering, is able to cluster pixels that are near intensity AND pixel location from one another. It essentially is taking into consideration the "connectvity" of a given cluster. SInce the aurora typically form some type of ovular shape this is extremely useful in being able to isolate the ring. 
 
 
 
