@@ -39,4 +39,8 @@ Data will be used to validate the accuracy of the
 models.
 
 METHODOLOGY
-There are currently two different data processing approaches to isolating the northern aurora. 
+There are currently two different data processing approaches to isolating the northern aurora. Both processes utilize basic physical phenomenon to constrain multiple different conditions (vauge I know). The current implementation being developed relies on basic computer vision and unsupervised learning techniques. An example of a run through the algorithm shows complete detection of the aurora on the dayside of the globe (even we can't see it). 
+
+
+
+
