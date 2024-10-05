@@ -15,3 +15,6 @@ from .plots_on_globe import plot_on_globe
 from .scans_at_time import scans_at_time
 from .get_difference import absolute_difference
 from .segment_image import segment_image
+from .time_window import time_window
+from .get_smooth_south import get_south_half
+from .LoG_filter_opencv import LoG_filter_opencv
