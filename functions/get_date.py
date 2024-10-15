@@ -14,4 +14,5 @@ def date_and_time(filled_indices, time):
         i, j = index
         time_array[i,j] = (''.join([c.decode('utf-8') for c in time[i, j]]))[11:]
     
+    
     return date, time_array

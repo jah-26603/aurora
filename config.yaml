@@ -1,0 +1,11 @@
+---
+north_day: "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2020\\295"
+south_day: "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2021\\112"
+
+north_filepath: "{north_day}\\data"
+south_filepath: "{south_day}\\data"
+
+graphic_outputs:
+  raw_north: "{north_day}\\graphics\\raw_north"
+  difference: "{north_day}\\graphics\\difference"
+  results: "{north_day}\\graphics\\results"
