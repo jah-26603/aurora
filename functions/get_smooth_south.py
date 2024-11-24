@@ -7,7 +7,7 @@ Created on Mon Sep 16 15:04:18 2024
 import functions 
 import netCDF4 as nc
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 # need the file list within a given time window
 # need to do some operation on the arrays in south_scans
@@ -36,8 +36,8 @@ def get_south_half(file_list, north, time_window = 30):
         brightnesses_LBHS = functions.get_data_info(radiance, one_pixel, 138, 152, 148, 150, multi_regions= True)    
         south_scans.append(brightnesses_LBHS)
     
-
-    resultant_south_scan = np.nanmean(np.array(south_scans), axis = 0)
+    
+    resultant_south_scan = np.nanmedian(np.array(south_scans), axis = 0)
     
     return resultant_south_scan
     

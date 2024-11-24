@@ -18,3 +18,9 @@ from .segment_image import segment_image
 from .time_window import time_window
 from .get_smooth_south import get_south_half
 from .LoG_filter_opencv import LoG_filter_opencv
+from .save_array import save_array
+from .save_array import save_plots
+from .create_gif import create_gif
+from .gabor_fil import gabor_fil
+from .clustering_routine import clustering_routine
+from .find_limb_edge import find_edge
