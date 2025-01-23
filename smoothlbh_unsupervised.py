@@ -8,149 +8,113 @@ import functions
 import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import cwt, morlet
-import os
 import glob
 from tqdm import tqdm
 import cv2
-from time import time as timer
-from scipy.ndimage import gaussian_laplace
-from scipy.ndimage import gaussian_filter1d
-import scipy.signal
-import pandas as pd
+from scipy.signal import medfilt
+import cartopy.crs as ccrs
+import time
+import yaml
 
-
-def results_loop(time_of_scan, difference_LBHS, border_image, keys, file, latitude, lat_threshold, day, brightnesses_LBHS, sides, graphic_outputs):
-        a,b = sides
-        difference_LBHS_plot = np.copy(difference_LBHS)
-        difference_LBHS_plot[:,int(a)] = np.nan
-        difference_LBHS_plot[:,int(b)] = np.nan
-        difference_LBHS = difference_LBHS*border_image
-        dp = difference_LBHS.astype(np.float32)
-        gk1 = functions.gabor_fil(int(keys[file].split('_')[0]))
-        filtered_image, kernel = functions.LoG_filter_opencv(dp, sigma_x = .65, sigma_y =.35, size_x = 7, size_y = 5)
-        filtered_image = cv2.convertScaleAbs(filtered_image)
-
-
-        filtered_image = np.abs(cv2.filter2D(filtered_image, -1, gk1).astype(float))
-        filtered_image[filtered_image == 0] = np.nan
-        filtered_image[filtered_image < np.nanmedian(filtered_image)] = np.nan
-        filtered_image[filtered_image < np.nanmedian(filtered_image)] = np.nan
-        filtered_image[~np.isnan(filtered_image)] = 1
-        
-
-        show_plots = False
-
-        try:
-            results = functions.clustering_routine(dp, filtered_image, difference_LBHS, latitude, graphic_outputs, lat_threshold = lat_threshold)
-            functions.save_array(difference_LBHS_plot, day, time_of_scan,'difference', graphic_outputs['difference'], show_plots = show_plots)
-            functions.save_array(results, day, time_of_scan,'results', graphic_outputs['results'], cmap = 'plasma', show_plots = show_plots)
-            functions.save_array(brightnesses_LBHS, day, time_of_scan,'raw_north', graphic_outputs['raw_north'], show_plots = show_plots)
-
-        except ValueError:
-            print('no points meet criteria in this scan')
-            functions.save_array(difference_LBHS, day, time_of_scan,'difference', graphic_outputs['difference'], show_plots = show_plots)
-            functions.save_array(brightnesses_LBHS, day, time_of_scan,'raw_north', graphic_outputs['raw_north'], show_plots = show_plots)
-            functions.save_array(np.zeros((53, 92)), day, time_of_scan,'results', graphic_outputs['results'], cmap = 'plasma', show_plots = show_plots)
-        
-
-def process_loop(start_file, minus_end_file, north_day, south_day, north_filepath, south_filepath, graphic_outputs):
+def process_loop(species, start_file, minus_end_file, north_day, south_day,
+                 north_filepath, south_filepath, graphic_outputs, species_info_fp):
     file_list = glob.glob(f'{north_filepath}/*.nc')
-    south_LBHS = np.zeros((53, 92))
     hemisphere_order = []
     lat_threshold = 50
     dict_list_south_scans = functions.time_window(north_filepath, south_filepath, time_window = (-20, 20))
     keys = list(dict_list_south_scans.keys())
+    
+    species_info_dict = yaml.safe_load(open(species_info_fp))
     count = 0
     
-    points = np.zeros((len(keys),2))
-    image_array = np.zeros((len(keys),52,92))
-    difference_LBHS_array = np.zeros_like(image_array)
-    border_image_array = np.zeros_like(image_array)
-    diff_array = [] * len(keys)
-    second_der_array = [] * len(keys)
-    opoints = np.zeros((len(keys),2))
-    time_of_scan_array = []
-    day_array =[]
-    brightnesses_LBHS_array = np.zeros_like(image_array)
-    file_arr = []
+
+    points, opoints = (np.zeros((len(keys), 2)) for _ in range(2))
+    difference_array, brightnesses_array = (np.zeros((len(keys), 52, 92)) for _ in range(2))
+    diff_array, second_der_array, time_of_scan_array, day_array, file_arr = ([] for _ in range(5))
+
     for file in tqdm(range(start_file, int(len(keys))- minus_end_file)):
         
-        # if count%2 == 0:
-        #     file = -file
-            
-        # print(count)
+
         try:
             ds = nc.Dataset(file_list[file], 'r')
         except OSError:
             print('Error in reading netcdf4 file')
             continue
         if count == 0:
+            count += 1
             day = ds.DATE_START[:10]
             print('\n')
             print('Northern Hemisphere Scans from:   ' + day)
 
-        count +=.5
-
+        
         latitude = ds.variables['GRID_LAT'][:]    #Note: latitude data is flipped!! So data at top is southern most latitude and data at bottom is Northern most latitude
-        time = ds.variables['TIME_UTC'][:]
         radiance = ds.variables['RADIANCE'][:]
         wavelength = ds.variables['WAVELENGTH'][:]
         radiance = np.clip(radiance, 0, np.inf)
         sza = ds.variables['SOLAR_ZENITH_ANGLE'][:]
-
-
-
+        
 
         hemisphere_order, hemisphere, skip_s, skip_n = functions.hemisphere(hemisphere_order, sza, skip_s = True, skip_n = False) #which hemisphere  
         if skip_s == 1 and hemisphere_order[-1] == 1:
             continue
         if skip_n == 1 and hemisphere_order[-1] == 0:
             continue
-
-
-        filled_indices, one_pixel = functions.filled_indices(wavelength) #acceptable indices for analysis
-        date, time_array =  functions.date_and_time(filled_indices, time) #gets date and time
-        time_of_scan = time_array[91,81]
-        brightnesses_LBHS = functions.get_data_info(radiance, one_pixel, 138, 152, 148, 150, multi_regions= True)        
-
         
-        south_LBHS = functions.get_south_half(dict_list_south_scans[keys[file]], brightnesses_LBHS)
-        if hemisphere_order[-1] == 1:
-            continue
-    
-        'Work in progress...'
-        #This applies a background mask to get rid of stars so their intensities aren't considered
-        background_mask = np.ones_like(latitude)
-        background_mask[np.isnan(latitude)] = 0 #removes stars
-        brightnesses_LBHS = (brightnesses_LBHS*background_mask)[52:]
-        south_LBHS = (south_LBHS*background_mask)[:52]
-        try:
-            difference_LBHS, plot_diff, diff = functions.absolute_difference(brightnesses_LBHS, south_LBHS)
-        except ValueError:
-            print("Missing result from", time_of_scan )
-            continue
-        border_image, lb, rb, dummy_diff, dummy_second_der, dminv, dmaxv = functions.find_edge(difference_LBHS, diff, latitude)
+        breakpoint()
+        for specie in species:
+            specie_info = species_info_dict[specie]
+            
+            filled_indices, one_pixel = functions.filled_indices(wavelength) #acceptable indices for analysis
+            date, time_array =  functions.date_and_time(filled_indices, time) #gets date and time
+            time_of_scan = time_array[91,81]
+            
+            #Raw Data Arrays
+            brightnesses = functions.get_data_info(radiance, one_pixel, **specie_info)
+            south = functions.get_south_half(dict_list_south_scans[keys[file]], brightnesses, specie_info)
         
-        points[file] = [lb, rb]
-        opoints[file] = [dminv,dmaxv]
-        diff_array.append(dummy_diff)
-        second_der_array.append(dummy_second_der)
-        time_of_scan_array.append(time_of_scan)
-        difference_LBHS_array[file] = difference_LBHS
-        day_array.append(day)
-        brightnesses_LBHS_array[file] = brightnesses_LBHS
-        file_arr.append(file)
-    from scipy.signal import medfilt
+            if hemisphere_order[-1] == 1:
+                continue
+        
+       
+            'Work in progress...'
+            #This applies a background mask to get rid of stars so their intensities aren't considered
+            background_mask = np.where(np.isnan(latitude), 0 ,1)
+            brightnesses = (brightnesses*background_mask)[52:]
+            south = (south*background_mask)[:52]
+            
+            try:
+                difference, diff = functions.absolute_difference(brightnesses, south, np.copy(latitude))
+            except ValueError:
+                print("Missing result from", time_of_scan )
+                continue
+            if np.isnan(difference).all():
+                print('Missing result from', time_of_scan)
+                continue
+            border_image, lb, rb, dummy_diff, dummy_second_der, dminv, dmaxv = functions.find_edge(difference, diff, latitude)
+            points[file] = [lb, rb]
+            opoints[file] = [dminv,dmaxv]
+            diff_array.append(dummy_diff)
+            second_der_array.append(dummy_second_der)
+            time_of_scan_array.append(time_of_scan)
+            difference_array[file] = difference
+            day_array.append(day)
+            brightnesses_array[file] = brightnesses
+            file_arr.append(file)
+            
+
+
+
     
-    
+    difference_array = np.array([arr for arr in difference_array if not np.all(arr == 0)])
+    brightnesses_array = np.array([arr for arr in brightnesses_array if not np.all(arr == 0)])
     pp = points[~(points == 0).all(axis=1)]
-    op = opoints[~(opoints == 0).all(axis=1)]
-    difference_LBHS_array = difference_LBHS_array[~(difference_LBHS_array == 0).all(axis=2)]
-    difference_LBHS_array = difference_LBHS_array.reshape(difference_LBHS_array.shape[0]//52, 52, 92)
-    brightnesses_LBHS_array = brightnesses_LBHS_array[~(brightnesses_LBHS_array == 0).all(axis=2)]
-    brightnesses_LBHS_array = brightnesses_LBHS_array.reshape(brightnesses_LBHS_array.shape[0]//52, 52, 92)
-    
+    op = opoints[~(opoints == 0).all(axis=1)] #just for plotting
+    smooth_points = np.column_stack((medfilt(pp[:, 0], 7), medfilt(pp[:, 1], 7)))
+    actual_points = np.copy(pp)
+    c, r = np.where(np.abs(smooth_points - pp) > 3)
+    actual_points[c, r] = smooth_points[c, r]
+
+    actual_points = np.copy(pp)
     plt.figure()
     plt.plot(medfilt(pp[:,1],7), color = 'black', label = 'Smooth Decision Boundaries')
     plt.plot(medfilt(pp[:,0],7), color = 'black')
@@ -159,14 +123,8 @@ def process_loop(start_file, minus_end_file, north_day, south_day, north_filepat
     plt.ylabel('Column Boundaries for limb exclusion')
     plt.legend()
     plt.show()
-    smooth_points = np.zeros_like(pp)
-    smooth_points[:,1] = medfilt(pp[:,1],7)
-    smooth_points[:,0] = medfilt(pp[:,0],7)
-    actual_points = np.copy(pp)
-    c, r = np.where(np.abs(smooth_points- pp) > 3)
-    actual_points[c,r] = smooth_points[c,r]
-        
-    for i, file in tqdm(enumerate(file_arr)):
+    
+    for i, file in enumerate(file_arr):
         dummy = np.copy(latitude)
         dummy[np.isnan(dummy)] = 0
         dummy[dummy != 0 ] = 1
@@ -179,15 +137,15 @@ def process_loop(start_file, minus_end_file, north_day, south_day, north_filepat
         border_image = border_image[52:]
         border_image = np.abs(border_image - 1)
         border_image[:,int(pp[i,0]) :int(pp[i,1])] = 1
-        results_loop(time_of_scan_array[i], difference_LBHS_array[i], border_image, 
+        functions.results_loop(time_of_scan_array[i], difference_array[i], border_image, 
                      keys, file_arr[i], latitude, lat_threshold, day_array[i],
-                     brightnesses_LBHS_array[i], actual_points[i], graphic_outputs)
-
-    # for i in range(image_array.shape[0]):
+                     brightnesses_array[i], actual_points[i], graphic_outputs, species)
+    
+    # for i in range(difference_array.shape[0]):
     #     fig, axes = plt.subplots(2, 1, figsize=(10, 10))  # Adjust `figsize` as needed
     
     #     # Display the image on the first subplot
-    #     axes[0].imshow(image_array[i], aspect='auto')
+    #     axes[0].imshow(difference_array[i], aspect='auto')
     #     axes[0].axvline(x=pp[i, 0], color='white')
     #     axes[0].axvline(x=pp[i, 1], color='white')
     #     axes[0].axis('off')  
@@ -205,6 +163,43 @@ def process_loop(start_file, minus_end_file, north_day, south_day, north_filepat
     #     plt.tight_layout()
     #     plt.show()
     
+    
+    
+    
+    
+    
+    
+"""plotting stuff"""
+#Zoomed on in auroral region 
+# import cartopy.crs as ccrs
+
+# # Setup figure with one subplot
+# fig, ax = plt.subplots(figsize=(15, 8), subplot_kw={'projection': ccrs.PlateCarree(central_longitude=longitude[0, 51])})
+
+# # Add a title for the figure
+# fig.suptitle(
+#     f'Radiance Colormap Zoomed \nDate: {date}\nTime: {time_array[filled_indices[0, 0], filled_indices[0, 1]]}', 
+#     color='black', y=1.02, weight='bold'
+# )
+
+# # Set the geographical extent of the plot
+# ax.set_extent([-115, 15, 30, 80])
+
+# # Add gridlines
+# gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+#                   linewidth=2, color='gray', alpha=0.5, linestyle='--')
+
+# # Plot the data
+# latitude = latitude[52:]
+# longitude = longitude[52:]
+# im = ax.pcolor(longitude, latitude, brightnesses,  # Choose the first dataset for single image
+#                transform=ccrs.PlateCarree(), cmap='plasma')
+
+# # Add a color bar
+# cb = fig.colorbar(im, ax=ax, orientation='vertical', pad=0.05)
+# cb.set_label(f'{units[0]}')  # Use the cor
+# plt.show()
+
 if __name__ == "__main__":
     north_day =  "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2020\\295"
     south_day = "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2021\\112"

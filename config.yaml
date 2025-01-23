@@ -1,11 +1,18 @@
----
-north_day: "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2020\\295"
-south_day: "C:\\Users\\JDawg\\Desktop\\Aurora_Dates\\2021\\112"
 
-north_filepath: "{north_day}\\data"
-south_filepath: "{south_day}\\data"
 
-graphic_outputs:
-  raw_north: "{north_day}\\graphics\\raw_north"
-  difference: "{north_day}\\graphics\\difference"
-  results: "{north_day}\\graphics\\results"
+LBH:
+  name: "LBH"
+  lower_bound: 138
+  upper_bound: 152
+  lower_bound_2: 148
+  upper_bound_2: 150
+  multi_regions: true
+1493:
+  name: "1493"
+  lower_bound: 148.5
+  upper_bound: 150
+1356:
+  name: "1356"
+  lower_bound: 135
+  upper_bound: 136.2
+

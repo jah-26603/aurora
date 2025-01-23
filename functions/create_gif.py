@@ -8,7 +8,7 @@ import imageio
 from PIL import Image
 import glob
 import os 
-def create_gif(output_loc, day, raw_north, difference, results, duration = 100):
+def create_gif(output_loc, day, raw_north, difference, results, duration = 100, species = 'LBH'):
     
     
     if not os.path.exists(output_loc):
@@ -44,4 +44,4 @@ def create_gif(output_loc, day, raw_north, difference, results, duration = 100):
         combined_frames.append(combined_frame)
 
     # Save the combined GIF
-    imageio.mimsave(f'{output_loc}\\results_{day}.gif', combined_frames, duration= duration, loop = 0)  # Adjust duration as needed
+    imageio.mimsave(f'{output_loc}\\{day}_{species}.gif', combined_frames, duration= duration, loop = 0)  # Adjust duration as needed

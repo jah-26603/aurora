@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # need the file list within a given time window
 # need to do some operation on the arrays in south_scans
 
-def get_south_half(file_list, north, time_window = 30):
+def get_south_half(file_list, north, species_info):
     hemisphere_order = []
     south_scans = []
     
@@ -33,8 +33,8 @@ def get_south_half(file_list, north, time_window = 30):
         
     
         filled_indices, one_pixel = functions.filled_indices(wavelength) #acceptable indices for analysis
-        brightnesses_LBHS = functions.get_data_info(radiance, one_pixel, 138, 152, 148, 150, multi_regions= True)    
-        south_scans.append(brightnesses_LBHS)
+        brightnesses = functions.get_data_info(radiance, one_pixel, **species_info)    
+        south_scans.append(brightnesses)
     
     
     resultant_south_scan = np.nanmedian(np.array(south_scans), axis = 0)

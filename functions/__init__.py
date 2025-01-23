@@ -24,3 +24,6 @@ from .create_gif import create_gif
 from .gabor_fil import gabor_fil
 from .clustering_routine import clustering_routine
 from .find_limb_edge import find_edge
+from .results_loop import results_loop
+from .get_days import get_south_days
+from .magnetic_coords_conversion import compute_mlt, geographic_to_magnetic_lat

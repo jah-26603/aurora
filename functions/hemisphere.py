@@ -5,7 +5,7 @@ Created on Sun Aug 18 14:43:00 2024
 @author: JDawg
 """
 import numpy as np
-def hemisphere(hemisphere_order, sza, skip_s = True, skip_n = False, print_b = True): 
+def hemisphere(hemisphere_order, sza, skip_s = True, skip_n = False, print_b = False): 
     
     
     first_row_unpopulated = np.isnan(sza[0].data).all()   #Boolean: if True, first row of sza matrix is not populated
