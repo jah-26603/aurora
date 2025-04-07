@@ -1,18 +1,17 @@
 
 
 LBH:
-  name: "LBH"
   lower_bound: 138
   upper_bound: 152
   lower_bound_2: 148
   upper_bound_2: 150
-  multi_regions: true
-1493:
-  name: "1493"
+  multi_regions: True
+
+'1493':
   lower_bound: 148.5
   upper_bound: 150
-1356:
-  name: "1356"
+
+'1356':
   lower_bound: 135
   upper_bound: 136.2
 
