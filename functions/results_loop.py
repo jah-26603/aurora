@@ -10,7 +10,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 def results_loop(time_of_scan, difference, border_image, keys, file, latitude, 
-                 lat_threshold, day, brightnesses, sides, graphic_outputs, species):
+                 lat_threshold, day, brightnesses, sides, graphic_outputs, species, show_plots = True):
         a,b = sides
         difference_plot = np.copy(difference)
         
@@ -31,19 +31,24 @@ def results_loop(time_of_scan, difference, border_image, keys, file, latitude,
         filtered_image[filtered_image < np.nanmedian(filtered_image)] = np.nan
         filtered_image[~np.isnan(filtered_image)] = 1
         
-
-        show_plots = True
+        show_plots = False
         functions.save_array(difference_plot, day, time_of_scan,'difference', graphic_outputs['difference'], species, show_plots = show_plots)
         functions.save_array(brightnesses, day, time_of_scan,'raw_north', graphic_outputs['raw_north'], species, show_plots = show_plots)
-
+        mask = np.zeros_like(filtered_image)
         try:
             results = functions.clustering_routine(dp, filtered_image, difference, latitude, graphic_outputs, lat_threshold = lat_threshold)
-            
             results *= border_image
-            results[:,int(a)] = np.nan
-            results[:,int(b)] = np.nan
-            functions.save_array(results, day, time_of_scan,'results', graphic_outputs['results'], species, cmap = 'plasma', show_plots = show_plots)
+            results[results<50] = 0 
+            # results[:,int(a)] = np.nan
+            # results[:,int(b)] = np.nan
+            # functions.save_array(results, day, time_of_scan,'results', graphic_outputs['results'], species, cmap = 'plasma', show_plots = show_plots)
+            mask = np.copy(results)
+            mask[np.isnan(mask)] = 0
+            mask[mask != 0] = 1 
+            
         except ValueError:
             print('no points meet criteria in this scan')
-            functions.save_array(np.zeros((53, 92)), day, time_of_scan,'results', graphic_outputs['results'], cmap = 'plasma', show_plots = show_plots)
-        
+            mask = np.zeros((52,92))
+            results = np.zeros((52,92))
+            # functions.save_array(np.zeros((53, 92)), day, time_of_scan,'results', graphic_outputs['results'], cmap = 'plasma', show_plots = show_plots)
+        return mask, results

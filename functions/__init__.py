@@ -27,3 +27,8 @@ from .find_limb_edge import find_edge
 from .results_loop import results_loop
 from .get_days import get_south_days
 from .magnetic_coords_conversion import compute_mlt, geographic_to_magnetic_lat
+from .SpeciesProcessor import SpeciesProcessor
+from .track_limb_boundary import track_limb_boundary
+from .final_limb_boundary import final_limb_boundary
+from .auroral_products import aurora_products
+from .find_accetpable_south_days_from_geo import kp_days
